@@ -1,65 +1,73 @@
 /**
  * @file OpenCL 3.0 Grammar for Tree-Sitter
- * Feature-rich, covering most OpenCL constructs, and free of undefined references.
- * 
- * Based on tree-sitter-c grammar with OpenCL-specific extensions.
+ * Based on tree-sitter-c with OpenCL-specific extensions.
+ *
+ * This grammar reuses most of the C grammar and extends it to support:
+ *  - Kernel function definitions (with __kernel / kernel qualifier)
+ *  - OpenCL address space qualifiers (e.g. __global, __local, etc.)
+ *  - OpenCL built-in types (images, samplers, pipes, vectors)
+ *  - OpenCL-specific pragmas
+ *
+ * Author: <Your Name>
  * License: MIT
  */
 
-/// <reference types="tree-sitter-cli/dsl" />
-// @ts-check
-
 const C = require('tree-sitter-c/grammar');
 
-// OpenCL-specific precedence extensions
+// Extend the C precedence levels with additional OpenCL levels
 const PREC = Object.assign({}, C.PREC, {
   VECTOR_ACCESS: 17,
   ADDRESS_SPACE: 25,
   KERNEL: 26,
-  VECTOR_TYPE: 28
+  // If needed, assign a separate level for vector type constructions;
+  // Otherwise, you might reuse CALL precedence.
+  VECTOR_TYPE: 28,
+  TYPE_CAST: 29,
+  COMPOUND_LITERAL: 30,
+  PARAMETER_LIST: 31,
 });
 
 module.exports = grammar(C, {
   name: 'opencl',
 
   conflicts: ($, original) => original.concat([
-    [$.kernel_function_definition, $.declaration],
+    // Resolve conflicts between storage class and address space qualifiers
     [$.storage_class_specifier, $.address_space_qualifier],
-    [$.vector_type, $.type_specifier]
+    // (Other conflicts may be removed if deemed unnecessary after testing.)
   ]),
 
   rules: {
-    // Override top-level items to include OpenCL specifics
+    // --- Top-Level Items ---
     _top_level_item: ($, original) => choice(
       ...original.members,
       $.kernel_function_definition,
-      $.pragma_directive
+      $.opencl_pragma_directive
     ),
 
-    // OpenCL pragma directives
-    pragma_directive: $ => seq(
+    // --- OpenCL Pragma Directives ---
+    opencl_pragma_directive: $ => seq(
       '#pragma',
       'OPENCL',
       choice(
-        seq('EXTENSION', $._extension_name, ':', $._extension_behavior),
-        $._opencl_version
+        seq('EXTENSION', $.identifier, ':', choice('enable', 'disable', 'require', 'warn')),
+        choice('1.0', '1.1', '1.2', '2.0', '3.0')
       )
     ),
 
-    _extension_name: _ => token(/cl_[a-zA-Z0-9_]+/),
-    _extension_behavior: _ => choice('enable', 'disable', 'require'),
-    _opencl_version: _ => choice('1.0', '1.1', '1.2', '2.0', '3.0'),
-
-    // Kernel function definitions
+    // --- Kernel Function Definition ---
+    // OpenCL kernel functions must be declared with the __kernel or kernel qualifier,
+    // usually have a void return type, and can include additional qualifiers.
     kernel_function_definition: $ => seq(
       choice('__kernel', 'kernel'),
+      // Allow optional OpenCL-specific attributes (e.g. work group hints)
       repeat($.function_attribute),
+      // Enforce void return type for kernel functions
       'void',
       field('declarator', $.function_declarator),
       field('body', $.compound_statement)
     ),
 
-    // OpenCL address space qualifiers
+    // --- OpenCL-Specific Qualifiers ---
     address_space_qualifier: _ => prec(PREC.ADDRESS_SPACE, choice(
       '__global', 'global',
       '__local', 'local',
@@ -68,68 +76,43 @@ module.exports = grammar(C, {
       '__generic', 'generic'
     )),
 
-    // OpenCL-specific type extensions
+    // Optionally, if needed, define additional OpenCL access qualifiers:
+    // (These can also be defined as part of type qualifiers if desired.)
+    // access_qualifier: _ => choice('__read_only', 'read_only', '__write_only', 'write_only', '__read_write', 'read_write'),
+
+    // --- Type System Extensions ---
+    // Extend the base C type_specifier with OpenCL-specific types.
     type_specifier: ($, original) => choice(
       ...original.members,
-      $.vector_type,
-      $.image_type,
-      $.sampler_type,
-      $.pipe_type
+      // OpenCL built-in types
+      'sampler_t',
+      'image1d_t', 'image1d_array_t', 'image1d_buffer_t',
+      'image2d_t', 'image2d_array_t',
+      'image3d_t',
+      'pipe'
     ),
 
-    // Vector types (e.g., float4, int2)
+    // Vector types (e.g. float4, int8) are common in OpenCL.
+    // Here we define a vector_type; you may choose to merge this with type_specifier
+    // or treat vector types as a kind of function call (constructor) on a basic type.
     vector_type: $ => prec(PREC.VECTOR_TYPE, seq(
       field('base_type', choice(
-        'char', 'uchar', 'short', 'ushort', 
+        'char', 'uchar', 'short', 'ushort',
         'int', 'uint', 'long', 'ulong',
         'float', 'double', 'half'
       )),
       field('size', choice('2', '3', '4', '8', '16'))
     )),
 
-    // Image types
-    image_type: _ => choice(
-      'image1d_t', 'image1d_array_t', 'image1d_buffer_t',
-      'image2d_t', 'image2d_array_t', 'image3d_t'
-    ),
-
-    // Sampler type
-    sampler_type: _ => 'sampler_t',
-
-    // Pipe type (OpenCL 2.0+)
-    pipe_type: _ => 'pipe',
-
-    // OpenCL function attributes
-    function_attribute: _ => choice(
-      'vec_type_hint',
-      'work_group_size_hint',
-      'reqd_work_group_size',
-      'intel_reqd_sub_group_size'
-    ),
-
-    // Extend expression to include vector access
-    expression: ($, original) => choice(
-      ...original.members,
-      $.vector_access,
-      $.builtin_function_call
-    ),
-
-    // Vector component access (.xyzw, .rgba)
-    vector_access: $ => prec(PREC.VECTOR_ACCESS, seq(
-      field('vector', $.expression),
-      field('accessor', choice(
-        /\.([xyzw]{1,4}|[rgba]{1,4})/,
-        /\.[0-9]/
-      ))
-    )),
-
-    // OpenCL built-in function calls
+    // --- Built-in Functions ---
+    // Extend expression rules by adding OpenCL built-in function calls.
+    // Most function calls will be parsed using C’s call_expression,
+    // so here we add an alternative that recognizes known OpenCL built-ins.
     builtin_function_call: $ => seq(
       field('function', $.builtin_function),
       field('arguments', $.argument_list)
     ),
 
-    // Built-in functions categories
     builtin_function: $ => choice(
       $.work_group_function,
       $.atomic_function,
@@ -138,7 +121,6 @@ module.exports = grammar(C, {
       $.image_function
     ),
 
-    // Work-group functions
     work_group_function: _ => choice(
       'get_work_dim',
       'get_global_size',
@@ -149,21 +131,13 @@ module.exports = grammar(C, {
       'get_group_id'
     ),
 
-    // Atomic functions
     atomic_function: _ => choice(
-      'atomic_add',
-      'atomic_sub',
-      'atomic_xchg',
-      'atomic_inc',
-      'atomic_dec',
-      'atomic_min',
-      'atomic_max',
-      'atomic_and',
-      'atomic_or',
-      'atomic_xor'
+      'atomic_add', 'atomic_sub',
+      'atomic_xchg', 'atomic_inc', 'atomic_dec',
+      'atomic_min', 'atomic_max',
+      'atomic_and', 'atomic_or', 'atomic_xor'
     ),
 
-    // Synchronization functions
     sync_function: _ => choice(
       'barrier',
       'mem_fence',
@@ -171,19 +145,55 @@ module.exports = grammar(C, {
       'write_mem_fence'
     ),
 
-    // Basic math functions (subset)
     math_function: _ => choice(
       'sin', 'cos', 'sqrt',
       'exp', 'log', 'pow',
       'floor', 'ceil', 'round'
     ),
 
-    // Image functions
     image_function: _ => choice(
       'read_imagef',
       'write_imagef',
       'get_image_width',
       'get_image_height'
-    )
+    ),
+
+    // --- Function Attributes ---
+    function_attribute: _ => choice(
+      'vec_type_hint',
+      'work_group_size_hint',
+      'reqd_work_group_size',
+      'intel_reqd_sub_group_size'
+    ),
+
+    // --- Vector Access ---
+    vector_access: $ => prec(PREC.VECTOR_ACCESS, seq(
+      field('vector', $.expression),
+      field('accessor', choice(
+        /\.([xyzw]{1,4}|[rgba]{1,4})/,
+        /\.[0-9]/
+      ))
+    )),
+
+    // --- Expression Extension ---
+    // Extend the base C expression rule by including vector access and builtin function calls.
+    expression: ($, original) => choice(
+      ...original.members,
+      $.vector_access,
+      $.builtin_function_call
+    ),
+
+    // --- Reuse all other rules from tree-sitter-c ---
+    // The remainder of the grammar (declarations, control flow, expressions, etc.)
+    // is inherited from tree-sitter-c and will not be redefined here.
   }
 });
+
+// Helper functions for comma-separated lists
+function commaSep(rule) {
+  return optional(commaSep1(rule));
+}
+
+function commaSep1(rule) {
+  return seq(rule, repeat(seq(',', rule)));
+}

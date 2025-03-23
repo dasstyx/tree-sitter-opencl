@@ -678,34 +678,17 @@
   {
     "type": "attribute",
     "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      },
-      "prefix": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      }
-    },
+    "fields": {},
     "children": {
-      "multiple": false,
-      "required": false,
+      "multiple": true,
+      "required": true,
       "types": [
         {
-          "type": "argument_list",
+          "type": "constant_expression",
+          "named": true
+        },
+        {
+          "type": "identifier",
           "named": true
         }
       ]
@@ -897,21 +880,6 @@
           }
         ]
       }
-    }
-  },
-  {
-    "type": "bitfield_clause",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expression",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -1312,6 +1280,21 @@
     }
   },
   {
+    "type": "constant_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "continue_statement",
     "named": true,
     "fields": {}
@@ -1639,7 +1622,7 @@
     "fields": {
       "declarator": {
         "multiple": true,
-        "required": false,
+        "required": true,
         "types": [
           {
             "type": "_field_declarator",
@@ -1668,10 +1651,6 @@
         },
         {
           "type": "attribute_specifier",
-          "named": true
-        },
-        {
-          "type": "bitfield_clause",
           "named": true
         },
         {
@@ -1711,14 +1690,6 @@
         },
         {
           "type": "preproc_function_def",
-          "named": true
-        },
-        {
-          "type": "preproc_if",
-          "named": true
-        },
-        {
-          "type": "preproc_ifdef",
           "named": true
         }
       ]
@@ -2947,10 +2918,6 @@
           "named": true
         },
         {
-          "type": "field_declaration",
-          "named": true
-        },
-        {
           "type": "function_definition",
           "named": true
         },
@@ -3043,10 +3010,6 @@
           "named": true
         },
         {
-          "type": "field_declaration",
-          "named": true
-        },
-        {
           "type": "function_definition",
           "named": true
         },
@@ -3107,10 +3070,6 @@
         },
         {
           "type": "enumerator",
-          "named": true
-        },
-        {
-          "type": "field_declaration",
           "named": true
         },
         {
@@ -3270,10 +3229,6 @@
           "named": true
         },
         {
-          "type": "field_declaration",
-          "named": true
-        },
-        {
           "type": "function_definition",
           "named": true
         },
@@ -3363,10 +3318,6 @@
         },
         {
           "type": "enumerator",
-          "named": true
-        },
-        {
-          "type": "field_declaration",
           "named": true
         },
         {
@@ -3661,15 +3612,11 @@
       }
     },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": false,
       "types": [
         {
           "type": "attribute_specifier",
-          "named": true
-        },
-        {
-          "type": "ms_declspec_modifier",
           "named": true
         }
       ]
@@ -3898,7 +3845,7 @@
     "named": true,
     "fields": {
       "declarator": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
@@ -3922,10 +3869,6 @@
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "attribute_specifier",
-          "named": true
-        },
         {
           "type": "type_qualifier",
           "named": true
@@ -4420,10 +4363,6 @@
   },
   {
     "type": ":",
-    "named": false
-  },
-  {
-    "type": "::",
     "named": false
   },
   {
