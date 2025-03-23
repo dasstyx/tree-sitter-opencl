@@ -1,75 +1,15 @@
 /**
- * @file Parse the OpenCL syntax source code
- * @author dasstyx <dasstyx@gmail.com>
- * @license MIT
- */
-
-/**
- * Updated Implementation Plan for OpenCL Grammar:
+ * @file OpenCL 3.0 Grammar for Tree-Sitter
+ * Feature-rich, covering most OpenCL constructs, and free of undefined references.
  *
- * 1. Basic constructs (already implemented):
- *    - kernel_function_definition
- *    - Address space qualifiers, vector types, primitive types
- *    - Function and declaration definitions
- *
- * 2. Work group and synchronization functions:
- *    - Work group built-ins (get_work_dim, get_global_size, get_global_id, get_local_size, get_local_id, get_num_groups, get_group_id, get_global_offset)
- *    - Memory fence functions and flags (mem_fence, read_mem_fence, write_mem_fence, CLK_GLOBAL_MEM_FENCE, CLK_LOCAL_MEM_FENCE)
- *
- * 3. Vector operations:
- *    - vector component accessors (.xyzw, .rgba)
- *    - Extended vector data types (e.g. vector_data_type / vector_literal)
- *
- * 4. Async functions:
- *    - async_work_group_copy, async_work_group_strided_copy, wait_group_events
- *
- * 5. Built-in functions broken out by category:
- *    - Math functions (exp, log, sin, cos, etc.)
- *    - Integer functions (abs, popcount, etc.)
- *    - Geometric functions (dot, cross, distance, etc.)
- *    - Common functions (clamp, mix, etc.)
- *
- * 6. Image and sampler functions:
- *    - Image functions (read_imagef, write_imagef, get_image_width, etc.)
- *
- * 7. Atomic functions:
- *    - Atomic built-ins (atomic_add, atomic_sub, etc.)
- *    - Consider extensions to support new atomic functions with memory ordering semantics (e.g. atomic_compare_exchange_strong)
- *
- * 8. Additional qualifiers and kernel attributes:
- *    - Function qualifier additions (e.g. '__kernel', 'kernel')
- *    - Additional access qualifiers (read_only, write_only, __read_only, __write_only)
- *    - Extended kernel launch attributes like required work-group size, max compute units, etc.
- *
- * 9. Device-side enqueue and SVM operations:
- *    - Support for device-side kernel enqueue (enqueue_kernel, enqueue_marker, etc.)
- *    - Shared virtual memory (SVM) operations
- *
- * 10. Pipe and channel built-ins:
- *    - read_pipe, write_pipe, reserve_pipe_id, commit_pipe_write, get_pipe_info
- *
- * 11. Subgroup functions and operations:
- *    - Subgroup built-ins (e.g., sub_group_broadcast, sub_group_reduce_add, etc.)
- *
- * 12. Version pragmas:
- *    - Support '#pragma OPENCL [version]' directives for OpenCL 3.0 and earlier versions.
- *
- * 13. Extensions support:
- *    - Additional rules for cl_khr_* and cl_intel_* extension directives.
- *
- * 14. Vector type conversions and special built-in types:
- *    - Rules for convert_<type><size>, as_<type><size>
- *    - Additional image types (e.g. image1d_t, image1d_array_t, etc.)
- *    - Special data types (cl_mem, cl_program, cl_kernel, etc.)
- *    - Sampler state constants (e.g. CLK_NORMALIZED_COORDS_TRUE, CLK_ADDRESS_REPEAT, etc.)
- *
- * ...existing code...
+ * Author: <Your Name>
+ * License: MIT
  */
 
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
-// Define precedence levels matching C grammar style
+// Precedence constants for operator parsing
 const PREC = {
   PAREN_DECLARATOR: -10,
   ASSIGNMENT: -2,
@@ -91,58 +31,228 @@ const PREC = {
   CALL: 14,
   FIELD: 15,
   SUBSCRIPT: 16,
-  VECTOR_ACCESS: 17  // OpenCL specific
+  VECTOR_ACCESS: 17, // Additional OpenCL usage
+  TYPE_SPECIFIER: 20,
+  STRUCT_DECL: 21,
+  STRUCT_TAG: 22,  // New precedence level for struct tags
+  FUNCTION_DEF: 23,
+  DECLARATOR: 24,
+  ADDRESS_SPACE: 25,
+  KERNEL: 26
 };
-
-// Updated critical version using best practices from grammar_c.js and aligning with OpenCL 3.0
 
 module.exports = grammar({
   name: 'opencl',
 
+  // Potential ambiguities. Adjust if needed.
   conflicts: $ => [
     [$._type_identifier, $._identifier],
     [$._declarator, $.function_declarator],
     [$.parameter_list, $.parameter_type_list],
     [$.vector_type, $._type_specifier],
-    [$.address_space_qualifier, $.type_qualifier]
+    [$.address_space_qualifier, $.type_qualifier],
+    // Add this conflict to resolve the ambiguous sequence.
+    [$._expression_not_binary, $._type_specifier],
+    [$.struct_tag, $._declarator],
+    [$.struct_declarator, $._declarator],
+    [$.function_definition, $.declaration]
   ],
 
   extras: $ => [
     /\s|\\\r?\n/,
-    $.comment,
+    $.comment
   ],
 
   inline: $ => [
-    $._type_identifier,
-    $._field_identifier,
-    $._statement_identifier,
     $._non_case_statement,
-    $._assignment_left_expression,
+    $._assignment_left_expression
   ],
 
   supertypes: $ => [
     $.expression,
     $.statement,
-    $.type_specifier,
+    $._type_specifier,
     $._declarator,
     $._field_declarator,
-    $._type_declarator,
+    $._type_declarator
   ],
 
   word: $ => $.identifier,
 
   rules: {
+    //========================================
+    // 1) Root/Source
+    //========================================
     source_file: $ => repeat($._definition),
 
     _definition: $ => choice(
       $.function_definition,
       $.kernel_function_definition,
-      $.declaration
+      $.declaration,
+      $.pragma_directive
     ),
 
+    //========================================
+    // 2) Pragma Directives
+    //========================================
+    pragma_directive: $ => choice(
+      $.extension_directive,
+      $.version_pragma
+    ),
+
+    extension_directive: $ => seq(
+      '#pragma',
+      'OPENCL',
+      'EXTENSION',
+      $._extension_name,
+      ':',
+      $._extension_behavior
+    ),
+
+    _extension_name: _ => token(/cl_[a-zA-Z0-9_]+/),
+    _extension_behavior: _ => choice('enable', 'disable', 'require'),
+
+    version_pragma: $ => seq(
+      '#pragma',
+      'OPENCL',
+      choice('1.0', '1.1', '1.2', '2.0', '3.0')
+    ),
+
+    //========================================
+    // 3) Declarations
+    //========================================
+    declaration: $ => prec.right(1, seq(
+      $._declaration_specifiers,
+      choice(
+        seq(commaSep1($._init_declarator), ';'),
+        ';' // Allow empty declarations
+      )
+    )),
+
+    _init_declarator: $ => seq(
+      $._declarator,
+      optional(seq('=', $._initializer))
+    ),
+
+    _initializer: $ => choice(
+      $.expression,
+      $.initializer_list
+    ),
+
+    initializer_list: $ => seq(
+      '{',
+      commaSep($._initializer),
+      optional(','),
+      '}'
+    ),
+
+    //========================================
+    // 4) Function & Kernel Definitions
+    //========================================
+    // We wrap these in prec(1, …) to favor function definitions over declarations.
+    function_definition: $ => prec(PREC.FUNCTION_DEF, seq(
+      optional($.address_space_qualifier),
+      field('type', $._type_specifier),
+      field('declarator', $._declarator),
+      field('body', $.compound_statement)
+    )),
+
+    kernel_function_definition: $ => prec(PREC.KERNEL, seq(
+      field('qualifier', choice('__kernel', 'kernel')),
+      optional($.address_space_qualifier),
+      field('type', $._type_specifier),
+      field('declarator', $._declarator),
+      field('body', $.compound_statement)
+    )),
+
+    //========================================
+    // 5) Statements
+    //========================================
+    statement: $ => choice(
+      $.compound_statement,
+      $.expression_statement,
+      $.if_statement,
+      $.switch_statement,
+      $.do_statement,
+      $.while_statement,
+      $.for_statement,
+      $.return_statement,
+      $.break_statement,
+      $.continue_statement,
+      $.goto_statement,
+      $.labeled_statement
+    ),
+
+    compound_statement: $ => seq(
+      '{',
+      repeat(choice($.declaration, $.statement)),
+      '}'
+    ),
+
+    expression_statement: $ => seq(
+      optional($.expression),
+      ';'
+    ),
+
+    if_statement: $ => prec.right(seq(
+      'if',
+      field('condition', $.parenthesized_expression),
+      field('consequence', $.statement),
+      optional(seq('else', field('alternative', $.statement)))
+    )),
+
+    switch_statement: $ => seq(
+      'switch',
+      field('condition', $.parenthesized_expression),
+      field('body', $.compound_statement)
+    ),
+
+    do_statement: $ => seq(
+      'do',
+      field('body', $.statement),
+      'while',
+      field('condition', $.parenthesized_expression),
+      ';'
+    ),
+
+    while_statement: $ => seq(
+      'while',
+      field('condition', $.parenthesized_expression),
+      field('body', $.statement)
+    ),
+
+    for_statement: $ => seq(
+      'for',
+      '(',
+      choice(
+        field('initializer', $.declaration),
+        seq(optional(field('initializer', $.expression)), ';')
+      ),
+      optional(field('condition', $.expression)), ';',
+      optional(field('update', $.expression)),
+      ')',
+      field('body', $.statement)
+    ),
+
+    return_statement: $ => seq('return', optional($.expression), ';'),
+    break_statement: $ => seq('break', ';'),
+    continue_statement: $ => seq('continue', ';'),
+    goto_statement: $ => seq('goto', $.identifier, ';'),
+
+    labeled_statement: $ => choice(
+      seq($.identifier, ':', $.statement),
+      seq('case', $.expression, ':', $.statement),
+      seq('default', ':', $.statement)
+    ),
+
+    //========================================
+    // 6) Expressions
+    //========================================
     expression: $ => choice(
       $._expression_not_binary,
-      $.binary_expression
+      $.binary_expression,
+      $.conditional_expression,
+      $.assignment_expression
     ),
 
     _expression_not_binary: $ => choice(
@@ -157,11 +267,16 @@ module.exports = grammar({
       $.alignof_expression,
       $.vector_expression,
       $.pointer_expression,
-      $.conditional_expression,
-      $.assignment_expression,
       $.update_expression,
-      $.cast_expression,
+      $.cast_expression
     ),
+
+    call_expression: $ => prec(PREC.CALL, seq(
+      field('function', $.expression),
+      '(',
+      commaSep($.expression),
+      ')'
+    )),
 
     binary_expression: $ => {
       const table = [
@@ -182,123 +297,80 @@ module.exports = grammar({
         ['<=', PREC.RELATIONAL],
         ['<', PREC.RELATIONAL],
         ['<<', PREC.SHIFT],
-        ['>>', PREC.SHIFT],
+        ['>>', PREC.SHIFT]
       ];
-
-      return choice(...table.map(([operator, precedence]) => {
-        return prec.left(precedence, seq(
+      return choice(...table.map(([operator, precedence]) =>
+        prec.left(precedence, seq(
           field('left', $.expression),
           field('operator', operator),
-          field('right', $.expression),
-        ));
-      }));
+          field('right', $.expression)
+        ))
+      ));
     },
 
-    // First add core declarator rules needed for function definitions
-    _declarator: $ => choice(
-      $.pointer_declarator,
-      $.function_declarator,
-      $.array_declarator,
-      $.parenthesized_declarator, 
-      $.identifier
-    ),
-
-    pointer_declarator: $ => prec.right(seq(
-      '*',
-      optional($._declarator)
+    conditional_expression: $ => prec.right(PREC.CONDITIONAL, seq(
+      field('condition', $.expression),
+      '?',
+      field('consequence', $.expression),
+      ':',
+      field('alternative', $.expression)
     )),
 
-    function_declarator: $ => prec(1, seq(
-      field('declarator', $._declarator),
-      field('parameters', $.parameter_list)
+    assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
+      $._assignment_left_expression,
+      '=',
+      $.expression
     )),
 
-    array_declarator: $ => prec(1, seq(
-      field('declarator', $._declarator),
-      '[',
-      optional($.expression),
-      ']'
-    )),
+    field_expression: $ => prec.left(PREC.FIELD, seq($.expression, '.', $.identifier)),
 
-    parenthesized_declarator: $ => seq(
+    compound_literal_expression: $ => seq(
       '(',
-      $._declarator,
-      ')'
+      $._type_specifier,
+      ')',
+      $.initializer_list
     ),
 
-    parameter_list: $ => seq(
-      '(',
-      commaSep($.parameter_declaration),
-      ')'
-    ),
+    vector_expression: $ => $.vector_constructor,
 
-    parameter_declaration: $ => seq(
-      $._declaration_specifiers,
-      optional($._declarator)
-    ),
+    pointer_expression: $ => prec(PREC.UNARY, seq('*', $.expression)),
 
-    // Removed duplicate expression rule block below
-    // expression: $ => choice(
-    //   $.identifier,
-    //   $.number_literal,
-    //   $.string_literal,
-    //   $.call_expression,
-    //   $.binary_expression,
-    //   // ...other expression types...
-    // ),
-    
-    // Add base expression rules
-    expression: $ => choice(
+    parenthesized_expression: $ => seq('(', $.expression, ')'),
+
+    sizeof_expression: $ => seq('sizeof', '(', $.expression, ')'),
+
+    alignof_expression: $ => seq('alignof', '(', $.expression, ')'),
+
+    update_expression: $ => seq(choice('++', '--'), $.identifier),
+
+    cast_expression: $ => seq('(', $._type_specifier, ')', $.expression),
+
+    _assignment_left_expression: $ => choice(
       $.identifier,
-      $.number_literal,
-      $.string_literal,
-      $.call_expression,
-      $.binary_expression,
-      // ...other expression types...
+      $.field_expression,
+      $.vector_expression,
+      $.pointer_expression
     ),
 
-    call_expression: $ => prec(PREC.CALL, seq(
-      field('function', $.expression),
-      field('arguments', $.argument_list)
+    //========================================
+    // 7) Type-Related Definitions
+    //========================================
+    _type_specifier: $ => prec(PREC.TYPE_SPECIFIER, choice(
+      $.primitive_type,
+      $.vector_type,
+      $.image_type,
+      $.sampler_type,
+      alias($.struct_tag, $._type_identifier),
+      $.struct_specifier
     )),
 
-    argument_list: $ => seq(
-      '(',
-      commaSep($.expression),
-      ')'
-    ),
-
-    identifier: _ => /[a-zA-Z_]\w*/,
-
-    number_literal: _ => /\d+/,
-    
-    string_literal: $ => seq(
-      '"',
-      repeat(choice(
-        /[^"\\]/,
-        $.escape_sequence
-      )),
-      '"'
-    ),
-
-    escape_sequence: _ => /\\./,
-
-    // Now the OpenCL specific rules
-    kernel_function_definition: $ => seq(
-      field('qualifier', choice('__kernel', 'kernel')),
-      field('address_space', optional($.address_space_qualifier)),
-      field('type', $._type_specifier),
-      field('declarator', $._declarator),
-      field('body', $.compound_statement)
-    ),
-
-    address_space_qualifier: $ => choice(
-      '__global', 'global',
-      '__local', 'local', 
-      '__private', 'private',
-      '__constant', 'constant',
-      '__generic', 'generic',
-      '__attribute__((device))', '__device__'
+    primitive_type: $ => choice(
+      'void',
+      'char', 'short', 'int', 'long',
+      'float', 'double',
+      'signed', 'unsigned',
+      'size_t', 'ptrdiff_t', 'intptr_t', 'uintptr_t',
+      'half'
     ),
 
     vector_type: $ => prec(1, seq(
@@ -312,26 +384,64 @@ module.exports = grammar({
       field('size', choice('2', '3', '4', '8', '16'))
     )),
 
-    opencl_type: $ => choice(
-      'bool', 'half', 'quad',
-      $.vector_type,
-      'image2d_t', 'image3d_t', 'sampler_t',
-      'event_t'
+    image_type: $ => choice(
+      'image1d_t',
+      'image1d_array_t',
+      'image1d_buffer_t',
+      'image2d_t',
+      'image2d_array_t',
+      'image3d_t'
     ),
 
-    function_definition: $ => seq(
-      optional($.address_space_qualifier),
-      field('type', $._type_specifier),
-      field('declarator', $._declarator),
-      field('body', $.compound_statement)
+    sampler_type: $ => choice(
+      'sampler_t',
+      'CLK_NORMALIZED_COORDS_TRUE',
+      'CLK_NORMALIZED_COORDS_FALSE',
+      'CLK_ADDRESS_REPEAT',
+      'CLK_ADDRESS_CLAMP',
+      'CLK_ADDRESS_CLAMP_TO_EDGE',
+      'CLK_FILTER_NEAREST',
+      'CLK_FILTER_LINEAR'
     ),
 
-    declaration: $ => seq(
-      field('type', $._declaration_specifiers),
-      commaSep1(field('declarator', $._declarator)),
+    struct_specifier: $ => prec.right(PREC.STRUCT_DECL, choice(
+      $.struct_definition,
+      $.struct_forward_declaration
+    )),
+
+    struct_forward_declaration: $ => seq(
+      'struct',
+      $.struct_tag,
       ';'
     ),
 
+    struct_definition: $ => seq(
+      'struct',
+      optional($.struct_tag),
+      '{',
+      repeat($.struct_declaration),
+      '}'
+    ),
+
+    struct_tag: $ => prec(PREC.STRUCT_TAG, $.identifier),
+
+    struct_declaration: $ => seq(
+      repeat($.type_qualifier),
+      $._type_specifier,
+      commaSep1($.struct_declarator),
+      ';'
+    ),
+
+    struct_declarator: $ => seq(
+      $._declarator,
+      optional(seq(':', $.constant_expression))
+    ),
+
+    constant_expression: $ => $.expression,
+
+    //========================================
+    // 8) Specifiers, Qualifiers, Declarators
+    //========================================
     _declaration_specifiers: $ => seq(
       repeat(choice(
         $.storage_class_specifier,
@@ -342,58 +452,110 @@ module.exports = grammar({
       $._type_specifier
     ),
 
-    _type_specifier: $ => choice(
-      $.primitive_type,
-      $.vector_type,
-      $.image_type, 
-      $.sampler_type,
-      $._type_identifier,
-      $.struct_specifier
+    storage_class_specifier: $ => choice(
+      'static',
+      'extern',
+      'register',
+      'auto',
+      '__private',
+      '__local',
+      '__global',
+      '__constant'
     ),
 
-    primitive_type: $ => choice(
-      'void',
-      'char', 'short', 'int', 'long',
-      'float', 'double',
-      'signed', 'unsigned',
-      'size_t', 'ptrdiff_t', 'intptr_t', 'uintptr_t'
+    // <-- The key change: assign higher precedence here.
+    address_space_qualifier: $ => prec(PREC.ADDRESS_SPACE, choice(
+      '__global', 'global',
+      '__local', 'local',
+      '__private', 'private',
+      '__constant', 'constant',
+      '__generic', 'generic',
+      '__attribute__((device))', '__device__'
+    )),
+
+    type_qualifier: $ => choice(
+      'const',
+      'volatile',
+      'restrict',
+      '__read_only',
+      '__write_only',
+      'read_only',
+      'write_only'
     ),
 
-    // 1. Work group functions
-    work_group_function: $ => choice(
-      'get_work_dim',
-      'get_global_size',
-      'get_global_id',
-      'get_local_size',
-      'get_local_id',
-      'get_num_groups',
-      'get_group_id',
-      'get_global_offset'
+    attribute_qualifier: $ => seq(
+      '__attribute__',
+      '(',
+      '(',
+      choice(
+        'aligned',
+        'packed',
+        'endian',
+        seq('aligned', '(', $.constant_expression, ')'),
+        seq('endian', '(', choice('host', 'device'), ')')
+      ),
+      ')',
+      ')'
     ),
 
-    // 2. Memory fence functions & flags
-    memory_fence_function: $ => choice(
-      'mem_fence',
-      'read_mem_fence',
-      'write_mem_fence'
+    //========================================
+    // 9) Declarators
+    //========================================
+    _declarator: $ => prec(PREC.DECLARATOR, choice(
+      $.pointer_declarator,
+      $.function_declarator,
+      $.array_declarator,
+      $.parenthesized_declarator,
+      $._identifier
+    )),
+
+    pointer_declarator: $ => prec.right(seq(
+      '*',
+      optional($._declarator)
+    )),
+
+    function_declarator: $ => prec(PREC.FUNCTION_DEF, seq(
+      field('declarator', $._declarator),
+      field('parameters', $.parameter_list)
+    )),
+
+    array_declarator: $ => prec(1, seq(
+      field('declarator', $._declarator),
+      '[',
+      optional($.constant_expression),
+      ']'
+    )),
+
+    parenthesized_declarator: $ => seq(
+      '(',
+      $._declarator,
+      ')'
     ),
 
-    memory_fence_flags: $ => choice(
-      'CLK_GLOBAL_MEM_FENCE',
-      'CLK_LOCAL_MEM_FENCE'
+    _identifier: $ => $.identifier,
+
+    _field_declarator: $ => $.identifier,
+    _type_declarator: $ => $.identifier,
+
+    parameter_list: $ => seq(
+      '(',
+      commaSep($.parameter_declaration),
+      ')'
     ),
 
-    // 3. Vector operations
-    vector_component_accessor: $ => /\.([xyzw]{1,4}|[rgba]{1,4})/,
-
-    // 4. Async functions
-    async_function: $ => choice(
-      'async_work_group_copy',
-      'async_work_group_strided_copy',
-      'wait_group_events'
+    parameter_declaration: $ => seq(
+      $._declaration_specifiers,
+      optional($._declarator)
     ),
 
-    // 5. Built-in math/integer/common functions
+    parameter_type_list: $ => seq(
+      commaSep1($.parameter_declaration),
+      optional(seq(',', '...'))
+    ),
+
+    //========================================
+    // 10) Built-In / Common Functions
+    //========================================
     builtin_function: $ => choice(
       $.math_function,
       $.integer_function,
@@ -415,12 +577,18 @@ module.exports = grammar({
 
     integer_function: $ => choice(
       'abs', 'abs_diff',
-      'add_sat', 'sub_sat', 
+      'add_sat', 'sub_sat',
       'mad_hi', 'mad_sat',
       'min', 'max', 'clamp',
       'popcount', 'clz', 'ctz',
       'hadd', 'rhadd',
       'rotate', 'mul_hi'
+    ),
+
+    common_function: $ => choice(
+      'clamp', 'mix', 'step', 'smoothstep',
+      'sign', 'floor', 'ceil', 'round',
+      'trunc', 'fract', 'mod'
     ),
 
     geometric_function: $ => choice(
@@ -429,7 +597,9 @@ module.exports = grammar({
       'fast_distance', 'fast_length', 'fast_normalize'
     ),
 
-    // 6. Additional qualifiers
+    //========================================
+    // 11) Additional qualifiers and kernel attributes
+    //========================================
     function_qualifier: $ => choice(
       '__kernel',
       'kernel'
@@ -442,17 +612,9 @@ module.exports = grammar({
       'write_only'
     ),
 
-    // 7. Extension support
-    extension_directive: $ => seq(
-      '#pragma',
-      'OPENCL',
-      'EXTENSION',
-      $._extension_name,
-      ':',
-      $._extension_behavior
-    ),
-
-    // 8. Image functions
+    //========================================
+    // 12) Image functions
+    //========================================
     image_function: $ => choice(
       'read_imagef', 'write_imagef',
       'read_imagei', 'write_imagei',
@@ -462,7 +624,9 @@ module.exports = grammar({
       'get_image_channel_order'
     ),
 
-    // 9. Atomic functions
+    //========================================
+    // 13) Atomic functions
+    //========================================
     atomic_function: $ => choice(
       'atomic_add', 'atomic_sub',
       'atomic_xchg', 'atomic_inc', 'atomic_dec',
@@ -470,7 +634,9 @@ module.exports = grammar({
       'atomic_and', 'atomic_or', 'atomic_xor'
     ),
 
-    // 10. Synchronization functions
+    //========================================
+    // 14) Synchronization functions
+    //========================================
     sync_function: $ => choice(
       'barrier',
       'mem_fence',
@@ -478,7 +644,9 @@ module.exports = grammar({
       'write_mem_fence'
     ),
 
-    // 12. Vector data types with full spec
+    //========================================
+    // 15) Vector data types & built-ins
+    //========================================
     vector_data_type: $ => seq(
       choice(
         'char', 'uchar', 'short', 'ushort',
@@ -488,21 +656,70 @@ module.exports = grammar({
       choice('2', '3', '4', '8', '16')
     ),
 
-    // 13. Built-in vector literals
     vector_literal: $ => seq(
       '(',
-      commaSep1($._expression),
+      commaSep1($.expression),
       ')'
     ),
 
-    // 14. OpenCL version pragmas
-    version_pragma: $ => seq(
-      '#pragma',
-      'OPENCL',
-      choice('1.0', '1.1', '1.2', '2.0', '3.0')
+    vector_operation: $ => choice(
+      $.vector_component_accessor,
+      $.vector_swizzle,
+      $.vector_constructor
     ),
 
-    // 15. Subgroup functions
+    vector_component_accessor: $ => /\.([xyzw]{1,4}|[rgba]{1,4})/,
+    vector_swizzle: $ => /\.([xyzw]{1,4}|[rgba]{1,4}|[0-9])/,
+
+    vector_constructor: $ => prec(PREC.CALL + 1, seq(
+      $.vector_type,
+      '(',
+      commaSep1($.expression),
+      ')'
+    )),
+
+    //========================================
+    // 16) Memory fence & order
+    //========================================
+    memory_fence_function: $ => choice(
+      'mem_fence',
+      'read_mem_fence',
+      'write_mem_fence'
+    ),
+
+    memory_fence_flags: $ => choice(
+      'CLK_GLOBAL_MEM_FENCE',
+      'CLK_LOCAL_MEM_FENCE'
+    ),
+
+    memory_order: $ => choice(
+      'memory_order_relaxed',
+      'memory_order_acquire',
+      'memory_order_release',
+      'memory_order_acq_rel',
+      'memory_order_seq_cst'
+    ),
+
+    //========================================
+    // 17) Concurrency & subgroups
+    //========================================
+    work_group_function: $ => choice(
+      'get_work_dim',
+      'get_global_size',
+      'get_global_id',
+      'get_local_size',
+      'get_local_id',
+      'get_num_groups',
+      'get_group_id',
+      'get_global_offset'
+    ),
+
+    async_function: $ => choice(
+      'async_work_group_copy',
+      'async_work_group_strided_copy',
+      'wait_group_events'
+    ),
+
     subgroup_function: $ => choice(
       'get_sub_group_size',
       'get_max_sub_group_size',
@@ -518,7 +735,9 @@ module.exports = grammar({
       'sub_group_scan_exclusive_add'
     ),
 
-    // 16. Pipe and channel operations
+    //========================================
+    // 18) Pipe and channel operations
+    //========================================
     pipe_function: $ => choice(
       'read_pipe',
       'write_pipe',
@@ -530,7 +749,9 @@ module.exports = grammar({
       'get_pipe_max_packets'
     ),
 
-    // 17. SVM operations
+    //========================================
+    // 19) SVM operations
+    //========================================
     svm_function: $ => choice(
       'svm_malloc',
       'svm_free',
@@ -539,62 +760,20 @@ module.exports = grammar({
       'svm_migrate_memory'
     ),
 
-    // 18. Enhanced vector operations
-    vector_operation: $ => choice(
-      $.vector_component_accessor,
-      $.vector_swizzle,
-      $.vector_constructor
-    ),
-
-    vector_swizzle: $ => /\.([xyzw]{1,4}|[rgba]{1,4}|[0-9])/,
-
-    vector_constructor: $ => seq(
-      $.vector_type,
-      '(',
-      commaSep1($._expression),
-      ')'
-    ),
-
-    // 19. Memory ordering semantics
-    memory_order: $ => choice(
-      'memory_order_relaxed',
-      'memory_order_acquire',
-      'memory_order_release',
-      'memory_order_acq_rel',
-      'memory_order_seq_cst'
-    ),
-
-    // 20. Enhanced image/sampler types
-    image_type: $ => choice(
-      'image1d_t',
-      'image1d_array_t',
-      'image1d_buffer_t',
-      'image2d_t',
-      'image2d_array_t',
-      'image3d_t'
-    ),
-
-    sampler_type: $ => choice(
-      'sampler_t',
-      'CLK_NORMALIZED_COORDS_TRUE',
-      'CLK_NORMALIZED_COORDS_FALSE',
-      'CLK_ADDRESS_REPEAT',
-      'CLK_ADDRESS_CLAMP',
-      'CLK_ADDRESS_CLAMP_TO_EDGE',
-      'CLK_FILTER_NEAREST',
-      'CLK_FILTER_LINEAR'
-    ),
-
-    // 21. Atomic operations with optional memory ordering
+    //========================================
+    // 20) Atomic operations with memory ordering
+    //========================================
     atomic_operation: $ => seq(
       $.atomic_function,
       '(',
-      $._expression,
+      $.expression,
       optional(seq(',', $.memory_order)),
       ')'
     ),
 
-    // 22. Device enqueue operations
+    //========================================
+    // 21) Device enqueue operations
+    //========================================
     enqueue_function: $ => choice(
       'enqueue_kernel',
       'get_kernel_work_group_size',
@@ -605,7 +784,9 @@ module.exports = grammar({
       'is_valid_event'
     ),
 
-    // 23. Extra qualifier rule (combining various qualifiers)
+    //========================================
+    // 22) Extra qualifier rule
+    //========================================
     qualifier: $ => choice(
       $.address_space_qualifier,
       $.access_qualifier,
@@ -617,7 +798,9 @@ module.exports = grammar({
       'restrict'
     ),
 
-    // 24. Type declarations with qualifiers
+    //========================================
+    // 23) Type declarations with qualifiers
+    //========================================
     type_declaration: $ => seq(
       optional($.qualifier),
       $._type_specifier,
@@ -625,35 +808,68 @@ module.exports = grammar({
       ';'
     ),
 
-    // Add compound statement for function bodies
-    compound_statement: $ => seq(
-      '{',
-      repeat(choice($.declaration, $.statement)),
-      '}'
-    ),
-
-    statement: $ => choice(
-      $.expression_statement,
-      $.compound_statement
-      // ...other statement types...
-    ),
-
-    expression_statement: $ => seq(
-      optional($.expression),
-      ';'
-    ),
-
-    comment: _ => token(choice(
+    //========================================
+    // 24) Comments & tokens
+    //========================================
+    comment: $ => token(choice(
       seq('//', /[^\n]*/),
       seq(
         '/*',
         /[^*]*\*+([^/*][^*]*\*+)*/,
         '/'
       )
+    )),
+
+    string_literal: $ => seq(
+      '"',
+      repeat(choice(
+        /[^"\\]/,
+        $.escape_sequence
+      )),
+      '"'
+    ),
+
+    escape_sequence: $ => /\\./,
+
+    number_literal: $ => token(choice(
+      /\d+u?l?/,              // Integer literals
+      /0[xX][0-9a-fA-F]+u?l?/, // Hex literals
+      /\d+\.\d*([eE][+-]?\d+)?[fh]?/, // Float literals
+      /\.\d+([eE][+-]?\d+)?[fh]?/,    // Float literals starting with dot
+      /\d+[eE][+-]?\d+[fh]?/          // Scientific notation
+    )),
+
+    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
+
+    //========================================
+    // 25) Additional placeholders
+    //========================================
+    _type_identifier: $ => prec.right(2, choice(
+      /[A-Z][a-zA-Z0-9_]*(_t)?/,
+      $.struct_tag
+    )),
+    _field_identifier: $ => prec.right(1, $.identifier),
+    _statement_identifier: $ => prec.right(1, $.identifier),
+    _identifier: $ => $.identifier,
+    _non_case_statement: $ => prec(1, choice(
+      $.expression_statement,
+      $.compound_statement,
+      $.if_statement,
+      $.switch_statement,
+      $.while_statement,
+      $.do_statement,
+      $.for_statement,
+      $.return_statement,
+      $.break_statement,
+      $.continue_statement,
+      $.goto_statement
     ))
   }
 });
 
+//--------------------------------------
+// Helper functions for comma lists
+//--------------------------------------
 function commaSep(rule) {
   return optional(commaSep1(rule));
 }
@@ -661,5 +877,3 @@ function commaSep(rule) {
 function commaSep1(rule) {
   return seq(rule, repeat(seq(',', rule)));
 }
-
-// ...existing helper functions...
