@@ -188,7 +188,7 @@
       "required": true,
       "types": [
         {
-          "type": "identifier",
+          "type": "struct_tag",
           "named": true
         }
       ]
@@ -408,20 +408,27 @@
   {
     "type": "cast_expression",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "_type_specifier",
-          "named": true
-        },
-        {
-          "type": "expression",
-          "named": true
-        }
-      ]
+    "fields": {
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_type_specifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -681,7 +688,15 @@
         "required": true,
         "types": [
           {
-            "type": "_declarator",
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "parenthesized_declarator",
+            "named": true
+          },
+          {
+            "type": "pointer_declarator",
             "named": true
           }
         ]
@@ -717,7 +732,7 @@
         "required": true,
         "types": [
           {
-            "type": "_declarator",
+            "type": "function_declarator",
             "named": true
           }
         ]
@@ -1158,7 +1173,7 @@
     }
   },
   {
-    "type": "struct_definition",
+    "type": "struct_specifier",
     "named": true,
     "fields": {},
     "children": {
@@ -1177,49 +1192,15 @@
     }
   },
   {
-    "type": "struct_forward_declaration",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "struct_tag",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "struct_specifier",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "struct_definition",
-          "named": true
-        },
-        {
-          "type": "struct_forward_declaration",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "struct_tag",
     "named": true,
     "fields": {},
     "children": {
       "multiple": false,
-      "required": true,
+      "required": false,
       "types": [
         {
-          "type": "identifier",
+          "type": "struct_tag",
           "named": true
         }
       ]

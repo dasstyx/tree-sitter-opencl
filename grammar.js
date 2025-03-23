@@ -34,11 +34,15 @@ const PREC = {
   VECTOR_ACCESS: 17, // Additional OpenCL usage
   TYPE_SPECIFIER: 20,
   STRUCT_DECL: 21,
-  FUNCTION_DEF: 22,
-  DECLARATOR: 23,
-  ADDRESS_SPACE: 24,
-  KERNEL: 25,
-  VECTOR_TYPE: 26 // New precedence for vector types
+  STRUCT_TAG: 22,  // New precedence level for struct tags
+  FUNCTION_DEF: 23,
+  DECLARATOR: 24,
+  ADDRESS_SPACE: 25,
+  KERNEL: 26,
+  VECTOR_TYPE: 27,
+  TYPE_CAST: 28,
+  COMPOUND_LITERAL: 29,
+  PARAMETER_LIST: 30
 };
 
 module.exports = grammar({
@@ -46,16 +50,8 @@ module.exports = grammar({
 
   // Potential ambiguities. Adjust if needed.
   conflicts: $ => [
-    [$._type_identifier, $._identifier],
-    [$._declarator, $.function_declarator],
-    [$.parameter_list, $.parameter_type_list],
-    [$.vector_type, $._type_specifier],
-    [$.address_space_qualifier, $.type_qualifier],
-    // Add this conflict to resolve the ambiguous sequence.
-    [$._expression_not_binary, $._type_specifier],
-    [$.struct_tag, $._declarator],
-    [$.struct_declarator, $._declarator],
-    [$.function_definition, $.declaration]
+    [$._type_identifier, $.identifier],
+    [$.parameter_list, $.parameter_type_list]
   ],
 
   extras: $ => [
@@ -324,12 +320,12 @@ module.exports = grammar({
 
     field_expression: $ => prec.left(PREC.FIELD, seq($.expression, '.', $.identifier)),
 
-    compound_literal_expression: $ => seq(
+    compound_literal_expression: $ => prec(PREC.COMPOUND_LITERAL, seq(
       '(',
       $._type_specifier,
       ')',
       $.initializer_list
-    ),
+    )),
 
     vector_expression: $ => $.vector_constructor,
 
@@ -343,7 +339,7 @@ module.exports = grammar({
 
     update_expression: $ => seq(choice('++', '--'), $.identifier),
 
-    cast_expression: $ => prec(PREC.CAST, seq(
+    cast_expression: $ => prec(PREC.TYPE_CAST, seq(
       '(',
       field('type', $._type_specifier),
       ')',
@@ -410,25 +406,19 @@ module.exports = grammar({
     ),
 
     struct_specifier: $ => prec.right(PREC.STRUCT_DECL, choice(
-      $.struct_definition,
-      $.struct_forward_declaration
+      seq(
+        'struct',
+        optional($.struct_tag),
+        '{',
+        repeat($.struct_declaration),
+        '}'
+      ),
+      seq('struct', $.struct_tag)
     )),
 
-    struct_forward_declaration: $ => seq(
-      'struct',
-      $.struct_tag,
-      ';'
+    struct_tag: $ => prec(PREC.STRUCT_TAG, 
+      alias($.identifier, $.struct_tag)
     ),
-
-    struct_definition: $ => seq(
-      'struct',
-      optional($.struct_tag),
-      '{',
-      repeat($.struct_declaration),
-      '}'
-    ),
-
-    struct_tag: $ => prec(PREC.STRUCT_TAG, $.identifier),
 
     struct_declaration: $ => seq(
       repeat($.type_qualifier),
@@ -546,11 +536,11 @@ module.exports = grammar({
     _field_declarator: $ => $.identifier,
     _type_declarator: $ => $.identifier,
 
-    parameter_list: $ => seq(
+    parameter_list: $ => prec(PREC.PARAMETER_LIST, seq(
       '(',
-      commaSep($.parameter_declaration),
+      optional(commaSep($.parameter_declaration)),
       ')'
-    ),
+    )),
 
     parameter_declaration: $ => seq(
       $._declaration_specifiers,
