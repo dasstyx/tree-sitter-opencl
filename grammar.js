@@ -25,7 +25,7 @@ const PREC = {
   SHIFT: 8,
   ADD: 9,
   MULTIPLY: 10,
-  CAST: 11,
+  CAST: 27, // New precedence for cast expressions
   SIZEOF: 12,
   UNARY: 13,
   CALL: 14,
@@ -34,11 +34,11 @@ const PREC = {
   VECTOR_ACCESS: 17, // Additional OpenCL usage
   TYPE_SPECIFIER: 20,
   STRUCT_DECL: 21,
-  STRUCT_TAG: 22,  // New precedence level for struct tags
-  FUNCTION_DEF: 23,
-  DECLARATOR: 24,
-  ADDRESS_SPACE: 25,
-  KERNEL: 26
+  FUNCTION_DEF: 22,
+  DECLARATOR: 23,
+  ADDRESS_SPACE: 24,
+  KERNEL: 25,
+  VECTOR_TYPE: 26 // New precedence for vector types
 };
 
 module.exports = grammar({
@@ -153,7 +153,7 @@ module.exports = grammar({
     function_definition: $ => prec(PREC.FUNCTION_DEF, seq(
       optional($.address_space_qualifier),
       field('type', $._type_specifier),
-      field('declarator', $._declarator),
+      field('declarator', $.function_declarator),
       field('body', $.compound_statement)
     )),
 
@@ -343,7 +343,12 @@ module.exports = grammar({
 
     update_expression: $ => seq(choice('++', '--'), $.identifier),
 
-    cast_expression: $ => seq('(', $._type_specifier, ')', $.expression),
+    cast_expression: $ => prec(PREC.CAST, seq(
+      '(',
+      field('type', $._type_specifier),
+      ')',
+      field('value', $.expression)
+    )),
 
     _assignment_left_expression: $ => choice(
       $.identifier,
@@ -373,7 +378,7 @@ module.exports = grammar({
       'half'
     ),
 
-    vector_type: $ => prec(1, seq(
+    vector_type: $ => prec(PREC.VECTOR_TYPE, seq(
       field('base_type', choice(
         'char', 'uchar',
         'short', 'ushort',
@@ -515,7 +520,11 @@ module.exports = grammar({
     )),
 
     function_declarator: $ => prec(PREC.FUNCTION_DEF, seq(
-      field('declarator', $._declarator),
+      field('declarator', choice(
+        $.identifier,
+        $.pointer_declarator,
+        $.parenthesized_declarator
+      )),
       field('parameters', $.parameter_list)
     )),
 
