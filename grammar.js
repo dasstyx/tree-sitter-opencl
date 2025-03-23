@@ -4,9 +4,8 @@
  */
 
 const C = require('tree-sitter-c/grammar');
-const { commaSep, commaSep1 } = C;
 
-// Extend C precedence levels
+// Extend C precedence levels with OpenCL-specific ones
 const PREC = Object.assign({}, C.PREC, {
   VECTOR: C.PREC.CALL + 1, // Higher than CALL but lower than FIELD
 });
@@ -14,15 +13,16 @@ const PREC = Object.assign({}, C.PREC, {
 module.exports = grammar(C, {
   name: 'opencl',
 
-  // Minimize conflicts
+  // Minimal conflicts: Merge storage class and access qualifiers.
   conflicts: ($, original) => original.concat([
     [$.storage_class_specifier, $.access_qualifier],
   ]),
 
   rules: {
+    // --- Top-Level Items ---
     _top_level_item: ($, original) => choice(
       ...original.members,
-      $.kernel_function_definition, 
+      $.kernel_function_definition,
       $.opencl_pragma_directive
     ),
 
@@ -45,8 +45,16 @@ module.exports = grammar(C, {
       field('body', $.compound_statement)
     )),
 
-    // --- Storage & Qualifiers ---
-    // Merge OpenCL address spaces with storage class for cleaner parsing
+    // --- Function Attributes (for kernel hints) ---
+    function_attribute: _ => choice(
+      'vec_type_hint',
+      'work_group_size_hint',
+      'reqd_work_group_size',
+      'intel_reqd_sub_group_size'
+    ),
+
+    // --- Storage and Qualifiers ---
+    // Merge OpenCL address spaces into storage_class_specifier.
     storage_class_specifier: ($, original) => choice(
       ...original.members,
       '__global', 'global',
@@ -56,14 +64,13 @@ module.exports = grammar(C, {
       '__generic', 'generic'
     ),
 
-    // Separate access qualifiers to avoid conflicts
     access_qualifier: _ => choice(
       '__read_only', 'read_only',
       '__write_only', 'write_only',
       '__read_write', 'read_write'
     ),
 
-    // --- Types and Built-ins ---
+    // --- Extend Type Specifiers with OpenCL Types ---
     type_specifier: ($, original) => choice(
       ...original.members,
       $.vector_type,
@@ -74,42 +81,40 @@ module.exports = grammar(C, {
       'pipe'
     ),
 
-    // Simplified vector type handling
+    // --- Improved Vector Type (fixed regex) ---
     vector_type: _ => token(choice(
-      /[u]?char[2|3|4|8|16]/,
-      /[u]?short[2|3|4|8|16]/,
-      /[u]?int[2|3|4|8|16]/,
-      /[u]?long[2|3|4|8|16]/,
-      /float[2|3|4|8|16]/,
-      /double[2|3|4|8|16]/,
-      /half[2|3|4|8|16]/
+      /[u]?char(2|3|4|8|16)/,
+      /[u]?short(2|3|4|8|16)/,
+      /[u]?int(2|3|4|8|16)/,
+      /[u]?long(2|3|4|8|16)/,
+      /float(2|3|4|8|16)/,
+      /double(2|3|4|8|16)/,
+      /half(2|3|4|8|16)/
     )),
 
-    // --- Function Attributes ---
-    function_attribute: _ => choice(
-      'vec_type_hint',
-      'work_group_size_hint',
-      'reqd_work_group_size',
-      'intel_reqd_sub_group_size'
-    ),
-
     // --- Expression Extensions ---
-    // Adjust expression extension to handle vector access correctly
     expression: ($, original) => choice(
       ...original.members,
       $.builtin_function_call,
-      $.vector_access
+      // Vector access is handled through field_expression
     ),
 
-    // Fix vector access with explicit pattern matching
-    vector_access: $ => prec.right(PREC.VECTOR, seq(
-      field('vector', $._expression_not_binary),
-      field('accessor', choice(
-        token.immediate(/\.[xyzw]{1,4}/),
-        token.immediate(/\.[rgba]{1,4}/),
-        token.immediate(/\.s[0-9a-fA-F]+/)
+    // Override field_expression to handle both struct fields and vector components
+    field_expression: ($, original) => choice(
+      // Original C field access
+      original,
+      // Vector component access (must come after original to avoid conflicts)
+      prec.right(PREC.FIELD + 1, seq(
+        field('argument', $.expression),
+        field('operator', '.'),
+        field('component', token(choice(
+          /[xyzw]{1,4}/,
+          /[rgba]{1,4}/
+        )))
       ))
-    )),
+    ),
+
+    // --- Built-in Function Calls ---
     builtin_function_call: $ => seq(
       field('function', $.builtin_function),
       field('arguments', $.argument_list)
@@ -122,10 +127,11 @@ module.exports = grammar(C, {
       // Atomic functions
       'atomic_add', 'atomic_sub', 'atomic_inc', 'atomic_dec',
       'atomic_min', 'atomic_max', 'atomic_and', 'atomic_or', 'atomic_xor',
-      // Sync functions
+      // Synchronization functions
       'barrier', 'mem_fence', 'read_mem_fence', 'write_mem_fence',
       // Image functions
       'read_imagef', 'write_imagef', 'get_image_width', 'get_image_height'
+      // Expand this list to cover all OpenCL built-ins as needed.
     )
   }
 });
