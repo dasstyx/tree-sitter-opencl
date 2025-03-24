@@ -5,15 +5,15 @@
 
 const C = require('tree-sitter-c/grammar');
 
-// Extend C precedence levels with OpenCL-specific ones
+// Extend C precedence levels
 const PREC = Object.assign({}, C.PREC, {
-  VECTOR: C.PREC.CALL + 1, // Higher than CALL but lower than FIELD
+  VECTOR: C.PREC.CALL + 1,
+  OPENCL_ATTR: C.PREC.CALL + 2
 });
 
 module.exports = grammar(C, {
   name: 'opencl',
 
-  // Minimal conflicts: Merge storage class and access qualifiers.
   conflicts: ($, original) => original.concat([
     [$.storage_class_specifier, $.access_qualifier],
   ]),
@@ -130,8 +130,53 @@ module.exports = grammar(C, {
       // Synchronization functions
       'barrier', 'mem_fence', 'read_mem_fence', 'write_mem_fence',
       // Image functions
-      'read_imagef', 'write_imagef', 'get_image_width', 'get_image_height'
-      // Expand this list to cover all OpenCL built-ins as needed.
-    )
+      'read_imagef', 'write_imagef', 'get_image_width', 'get_image_height',
+      // Vector load functions
+      /vload[2348][1]?[6]?/,
+      'vload_half',
+      /vload_half[2348][1]?[6]?/,
+      /vloada_half[2348][1]?[6]?/,
+      
+      // Vector store functions
+      /vstore[2348][1]?[6]?/,
+      'vstore_half',
+      /vstore_half[2348][1]?[6]?/,
+      /vstorea_half[2348][1]?[6]?/,
+      
+      // Vector store with rounding modes
+      /vstore_half_(rte|rtz|rtp|rtn)/,
+      /vstore_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)/,
+      /vstorea_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)/
+    ),
+
+    // --- OpenCL Attributes ---
+    opencl_attribute: $ => prec(PREC.OPENCL_ATTR, seq(
+      '__attribute__',
+      '(',
+      '(',
+      choice(
+        seq('aligned', '(', $.number_literal, ')'),
+        seq('aligned', '(', ')'),
+        'packed',
+        seq('endian', '(', choice('host', 'device'), ')'),
+        'nosvm'
+      ),
+      ')',
+      ')'
+    )),
+
+    // Extend C's declaration specifiers with OpenCL attributes and resolve associativity
+    _declaration_specifiers: ($, original) => prec.right(1, seq(
+      repeat(choice(
+        $._declaration_modifiers,
+        $.opencl_attribute
+      )),
+      field('type', $.type_specifier),
+      repeat(choice(
+        $._declaration_modifiers,
+        $.opencl_attribute
+      ))
+    ))
   }
 });
+

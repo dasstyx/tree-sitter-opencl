@@ -49,3 +49,5 @@ zig-out/
 
 example.cl
 out.txt
+tree-sitter-c-grammar.js
+opencl.tmLanguage.json
