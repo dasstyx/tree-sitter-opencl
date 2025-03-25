@@ -15,7 +15,8 @@ module.exports = grammar(C, {
   name: 'opencl',
 
   conflicts: ($, original) => original.concat([
-    [$.storage_class_specifier, $.access_qualifier],
+    [$.function_definition, $.declaration],
+    [$.declaration]
   ]),
 
   rules: {
@@ -55,20 +56,25 @@ module.exports = grammar(C, {
 
     // --- Storage and Qualifiers ---
     // Merge OpenCL address spaces into storage_class_specifier.
-    storage_class_specifier: ($, original) => choice(
-      ...original.members,
-      '__global', 'global',
-      '__local', 'local',
-      '__private', 'private',
-      '__constant', 'constant',
-      '__generic', 'generic'
-    ),
-
-    access_qualifier: _ => choice(
-      '__read_only', 'read_only',
-      '__write_only', 'write_only',
-      '__read_write', 'read_write'
-    ),
+    declaration: ($, original) => 
+      choice(
+        seq(
+          repeat(choice(
+            // Direct token matches instead of rules
+            '__kernel', 'kernel',
+            '__global', 'global',
+            '__local', 'local',
+            '__private', 'private',
+            '__constant', 'constant',
+            '__generic', 'generic',
+            '__read_only', 'read_only',
+            '__write_only', 'write_only',
+            '__read_write', 'read_write'
+          )),
+          original
+        ),
+        original
+      ),
 
     // --- Extend Type Specifiers with OpenCL Types ---
     type_specifier: ($, original) => choice(

@@ -4540,6 +4540,14 @@
     "named": false
   },
   {
+    "type": "__read_only",
+    "named": false
+  },
+  {
+    "type": "__read_write",
+    "named": false
+  },
+  {
     "type": "__restrict__",
     "named": false
   },
@@ -4569,6 +4577,10 @@
   },
   {
     "type": "__volatile__",
+    "named": false
+  },
+  {
+    "type": "__write_only",
     "named": false
   },
   {
@@ -4901,6 +4913,14 @@
     "named": false
   },
   {
+    "type": "read_only",
+    "named": false
+  },
+  {
+    "type": "read_write",
+    "named": false
+  },
+  {
     "type": "register",
     "named": false
   },
@@ -5038,6 +5058,10 @@
   },
   {
     "type": "write_mem_fence",
+    "named": false
+  },
+  {
+    "type": "write_only",
     "named": false
   },
   {
