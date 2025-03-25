@@ -1363,6 +1363,10 @@
       "required": false,
       "types": [
         {
+          "type": "access_qualifier",
+          "named": true
+        },
+        {
           "type": "attribute_declaration",
           "named": true
         },
@@ -1380,6 +1384,10 @@
         },
         {
           "type": "storage_class_specifier",
+          "named": true
+        },
+        {
+          "type": "storage_qualifier",
           "named": true
         },
         {
@@ -4480,10 +4488,6 @@
     "named": false
   },
   {
-    "type": "__constant",
-    "named": false
-  },
-  {
     "type": "__declspec",
     "named": false
   },
@@ -4508,14 +4512,6 @@
     "named": false
   },
   {
-    "type": "__generic",
-    "named": false
-  },
-  {
-    "type": "__global",
-    "named": false
-  },
-  {
     "type": "__inline",
     "named": false
   },
@@ -4529,22 +4525,6 @@
   },
   {
     "type": "__leave",
-    "named": false
-  },
-  {
-    "type": "__local",
-    "named": false
-  },
-  {
-    "type": "__private",
-    "named": false
-  },
-  {
-    "type": "__read_only",
-    "named": false
-  },
-  {
-    "type": "__read_write",
     "named": false
   },
   {
@@ -4580,16 +4560,16 @@
     "named": false
   },
   {
-    "type": "__write_only",
-    "named": false
-  },
-  {
     "type": "_alignof",
     "named": false
   },
   {
     "type": "_unaligned",
     "named": false
+  },
+  {
+    "type": "access_qualifier",
+    "named": true
   },
   {
     "type": "alignas",
@@ -4673,10 +4653,6 @@
     "named": false
   },
   {
-    "type": "constant",
-    "named": false
-  },
-  {
     "type": "constexpr",
     "named": false
   },
@@ -4741,10 +4717,6 @@
     "named": false
   },
   {
-    "type": "generic",
-    "named": false
-  },
-  {
     "type": "get_global_id",
     "named": false
   },
@@ -4778,10 +4750,6 @@
   },
   {
     "type": "get_work_dim",
-    "named": false
-  },
-  {
-    "type": "global",
     "named": false
   },
   {
@@ -4834,10 +4802,6 @@
   },
   {
     "type": "kernel",
-    "named": false
-  },
-  {
-    "type": "local",
     "named": false
   },
   {
@@ -4901,23 +4865,11 @@
     "named": true
   },
   {
-    "type": "private",
-    "named": false
-  },
-  {
     "type": "read_imagef",
     "named": false
   },
   {
     "type": "read_mem_fence",
-    "named": false
-  },
-  {
-    "type": "read_only",
-    "named": false
-  },
-  {
-    "type": "read_write",
     "named": false
   },
   {
@@ -4963,6 +4915,10 @@
   {
     "type": "static",
     "named": false
+  },
+  {
+    "type": "storage_qualifier",
+    "named": true
   },
   {
     "type": "string_content",
@@ -5058,10 +5014,6 @@
   },
   {
     "type": "write_mem_fence",
-    "named": false
-  },
-  {
-    "type": "write_only",
     "named": false
   },
   {

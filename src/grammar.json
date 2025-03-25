@@ -2895,76 +2895,166 @@
                 "type": "CHOICE",
                 "members": [
                   {
-                    "type": "STRING",
-                    "value": "__kernel"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__kernel"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "kernel"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "kernel"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__global"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__global"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "global"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "global"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__local"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__local"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "local"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "local"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__private"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__private"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "private"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "private"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__constant"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__constant"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "constant"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "constant"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__generic"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__generic"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "generic"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "generic"
+                    },
+                    "named": true,
+                    "value": "storage_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__read_only"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__read_only"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "read_only"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "read_only"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__write_only"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__write_only"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "write_only"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "write_only"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "__read_write"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "__read_write"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   },
                   {
-                    "type": "STRING",
-                    "value": "read_write"
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "read_write"
+                    },
+                    "named": true,
+                    "value": "access_qualifier"
                   }
                 ]
               }

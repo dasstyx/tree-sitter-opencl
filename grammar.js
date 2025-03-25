@@ -55,21 +55,29 @@ module.exports = grammar(C, {
     ),
 
     // --- Storage and Qualifiers ---
-    // Merge OpenCL address spaces into storage_class_specifier.
     declaration: ($, original) => 
       choice(
         seq(
           repeat(choice(
-            // Direct token matches instead of rules
-            '__kernel', 'kernel',
-            '__global', 'global',
-            '__local', 'local',
-            '__private', 'private',
-            '__constant', 'constant',
-            '__generic', 'generic',
-            '__read_only', 'read_only',
-            '__write_only', 'write_only',
-            '__read_write', 'read_write'
+            // Storage class and access qualifiers as tokens
+            alias('__kernel', $.storage_qualifier),
+            alias('kernel', $.storage_qualifier),
+            alias('__global', $.storage_qualifier),
+            alias('global', $.storage_qualifier),
+            alias('__local', $.storage_qualifier),
+            alias('local', $.storage_qualifier),
+            alias('__private', $.storage_qualifier),
+            alias('private', $.storage_qualifier),
+            alias('__constant', $.storage_qualifier),
+            alias('constant', $.storage_qualifier),
+            alias('__generic', $.storage_qualifier),
+            alias('generic', $.storage_qualifier),
+            alias('__read_only', $.access_qualifier),
+            alias('read_only', $.access_qualifier),
+            alias('__write_only', $.access_qualifier),
+            alias('write_only', $.access_qualifier),
+            alias('__read_write', $.access_qualifier),
+            alias('read_write', $.access_qualifier)
           )),
           original
         ),

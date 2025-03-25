@@ -1,11 +1,14 @@
 ; Keywords
 [
-  "kernel" "__kernel"
   "break" "case" "const" "continue" "default"
   "do" "else" "enum" "extern" "for" "if"
   "inline" "return" "sizeof" "static" "struct"
   "switch" "typedef" "union" "volatile" "while"
 ] @keyword
+
+; Storage and Access Qualifiers
+(storage_qualifier) @type.qualifier
+(access_qualifier) @type.qualifier
 
 ; Address space and access qualifiers as direct tokens
 [
