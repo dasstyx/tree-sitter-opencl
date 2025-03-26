@@ -1,7 +1,6 @@
-; Highlights for OpenCL
-; Always ensure references match node types actually produced by grammar.js
+; highlights.scm
 
-; Basic keywords from C + extended
+; Basic keywords
 [
   "break" "case" "const" "continue" "default"
   "do" "else" "enum" "extern" "for" "if"
@@ -9,7 +8,7 @@
   "switch" "typedef" "union" "volatile" "while"
 ] @keyword
 
-; OpenCL qualifiers
+; Explicitly defined qualifier nodes
 (kernel_qualifier) @keyword
 (address_space_qualifier) @type.qualifier
 (access_qualifier) @type.qualifier
@@ -31,15 +30,13 @@
 ; Attributes
 (opencl_attribute) @attribute
 
-; Function calls: highlight the called function
+; Function calls
 (call_expression
   function: (identifier) @function)
-
-; Builtin function calls
 (builtin_function_call
   function: (builtin_function) @function.builtin)
 
-; Extended types
+; Types
 (primitive_type) @type
 (vector_type) @type
 [
@@ -50,9 +47,8 @@
   "pipe"
 ] @type.builtin
 
-; Vector swizzle field
-(field_expression
-  component: _ @property)
+; Vector component access
+(field_expression component: _ @property)
 
 ; Literals
 (string_literal) @string
@@ -63,7 +59,7 @@
 ; Comments
 (comment) @comment
 
-; Preprocessor
+; Preprocessor directives
 "#pragma" @preproc
 (preproc_directive) @preproc
 [
@@ -76,14 +72,12 @@
 (field_identifier) @property
 (type_identifier) @type
 
-; Constants in all-caps
+; Constants (uppercase identifiers)
 ((identifier) @constant
  (#match? @constant "^[A-Z][A-Z\\d_]*$"))
 
 ; Function declarations
-(function_declarator
-  declarator: (identifier) @function)
-
+(function_declarator declarator: (identifier) @function)
 (kernel_function_definition
-  declarator: (function_declarator 
+  declarator: (function_declarator
     declarator: (identifier) @function.special))
