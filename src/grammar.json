@@ -2897,163 +2897,103 @@
                   {
                     "type": "ALIAS",
                     "content": {
-                      "type": "STRING",
-                      "value": "__kernel"
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": "__kernel"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "kernel"
+                        }
+                      ]
                     },
-                    "named": true,
-                    "value": "storage_qualifier"
+                    "named": false,
+                    "value": "kernel_qualifier"
                   },
                   {
                     "type": "ALIAS",
                     "content": {
-                      "type": "STRING",
-                      "value": "kernel"
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": "__global"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__local"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__private"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__constant"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__generic"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "global"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "local"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "private"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "constant"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "generic"
+                        }
+                      ]
                     },
-                    "named": true,
-                    "value": "storage_qualifier"
+                    "named": false,
+                    "value": "address_space_qualifier"
                   },
                   {
                     "type": "ALIAS",
                     "content": {
-                      "type": "STRING",
-                      "value": "__global"
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": "__read_only"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__write_only"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "__read_write"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "read_only"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "write_only"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "read_write"
+                        }
+                      ]
                     },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "global"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__local"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "local"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__private"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "private"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__constant"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "constant"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__generic"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "generic"
-                    },
-                    "named": true,
-                    "value": "storage_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__read_only"
-                    },
-                    "named": true,
-                    "value": "access_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "read_only"
-                    },
-                    "named": true,
-                    "value": "access_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__write_only"
-                    },
-                    "named": true,
-                    "value": "access_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "write_only"
-                    },
-                    "named": true,
-                    "value": "access_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "__read_write"
-                    },
-                    "named": true,
-                    "value": "access_qualifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "read_write"
-                    },
-                    "named": true,
+                    "named": false,
                     "value": "access_qualifier"
                   }
                 ]
@@ -6926,10 +6866,6 @@
         {
           "type": "SYMBOL",
           "name": "binary_expression"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "builtin_function_call"
         }
       ]
     },
@@ -10273,63 +10209,11 @@
         },
         {
           "type": "STRING",
-          "value": "get_global_size"
-        },
-        {
-          "type": "STRING",
           "value": "get_global_id"
         },
         {
           "type": "STRING",
-          "value": "get_local_size"
-        },
-        {
-          "type": "STRING",
           "value": "get_local_id"
-        },
-        {
-          "type": "STRING",
-          "value": "get_num_groups"
-        },
-        {
-          "type": "STRING",
-          "value": "get_group_id"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_add"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_sub"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_inc"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_dec"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_min"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_max"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_and"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_or"
-        },
-        {
-          "type": "STRING",
-          "value": "atomic_xor"
         },
         {
           "type": "STRING",
@@ -10340,72 +10224,12 @@
           "value": "mem_fence"
         },
         {
-          "type": "STRING",
-          "value": "read_mem_fence"
-        },
-        {
-          "type": "STRING",
-          "value": "write_mem_fence"
-        },
-        {
-          "type": "STRING",
-          "value": "read_imagef"
-        },
-        {
-          "type": "STRING",
-          "value": "write_imagef"
-        },
-        {
-          "type": "STRING",
-          "value": "get_image_width"
-        },
-        {
-          "type": "STRING",
-          "value": "get_image_height"
-        },
-        {
           "type": "PATTERN",
           "value": "vload[2348][1]?[6]?"
         },
         {
-          "type": "STRING",
-          "value": "vload_half"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vload_half[2348][1]?[6]?"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vloada_half[2348][1]?[6]?"
-        },
-        {
           "type": "PATTERN",
           "value": "vstore[2348][1]?[6]?"
-        },
-        {
-          "type": "STRING",
-          "value": "vstore_half"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vstore_half[2348][1]?[6]?"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vstorea_half[2348][1]?[6]?"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vstore_half_(rte|rtz|rtp|rtn)"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vstore_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)"
-        },
-        {
-          "type": "PATTERN",
-          "value": "vstorea_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)"
         }
       ]
     },
@@ -10597,13 +10421,6 @@
     [
       "type_qualifier",
       "extension_expression"
-    ],
-    [
-      "function_definition",
-      "declaration"
-    ],
-    [
-      "declaration"
     ]
   ],
   "precedences": [],

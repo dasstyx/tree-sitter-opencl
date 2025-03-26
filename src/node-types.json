@@ -132,10 +132,6 @@
         "named": true
       },
       {
-        "type": "builtin_function_call",
-        "named": true
-      },
-      {
         "type": "call_expression",
         "named": true
       },
@@ -931,37 +927,6 @@
     "fields": {}
   },
   {
-    "type": "builtin_function",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "builtin_function_call",
-    "named": true,
-    "fields": {
-      "arguments": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "argument_list",
-            "named": true
-          }
-        ]
-      },
-      "function": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "builtin_function",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "call_expression",
     "named": true,
     "fields": {
@@ -1363,10 +1328,6 @@
       "required": false,
       "types": [
         {
-          "type": "access_qualifier",
-          "named": true
-        },
-        {
           "type": "attribute_declaration",
           "named": true
         },
@@ -1384,10 +1345,6 @@
         },
         {
           "type": "storage_class_specifier",
-          "named": true
-        },
-        {
-          "type": "storage_qualifier",
           "named": true
         },
         {
@@ -4569,7 +4526,11 @@
   },
   {
     "type": "access_qualifier",
-    "named": true
+    "named": false
+  },
+  {
+    "type": "address_space_qualifier",
+    "named": false
   },
   {
     "type": "alignas",
@@ -4588,47 +4549,7 @@
     "named": false
   },
   {
-    "type": "atomic_add",
-    "named": false
-  },
-  {
-    "type": "atomic_and",
-    "named": false
-  },
-  {
-    "type": "atomic_dec",
-    "named": false
-  },
-  {
-    "type": "atomic_inc",
-    "named": false
-  },
-  {
-    "type": "atomic_max",
-    "named": false
-  },
-  {
-    "type": "atomic_min",
-    "named": false
-  },
-  {
-    "type": "atomic_or",
-    "named": false
-  },
-  {
-    "type": "atomic_sub",
-    "named": false
-  },
-  {
-    "type": "atomic_xor",
-    "named": false
-  },
-  {
     "type": "auto",
-    "named": false
-  },
-  {
-    "type": "barrier",
     "named": false
   },
   {
@@ -4717,42 +4638,6 @@
     "named": false
   },
   {
-    "type": "get_global_id",
-    "named": false
-  },
-  {
-    "type": "get_global_size",
-    "named": false
-  },
-  {
-    "type": "get_group_id",
-    "named": false
-  },
-  {
-    "type": "get_image_height",
-    "named": false
-  },
-  {
-    "type": "get_image_width",
-    "named": false
-  },
-  {
-    "type": "get_local_id",
-    "named": false
-  },
-  {
-    "type": "get_local_size",
-    "named": false
-  },
-  {
-    "type": "get_num_groups",
-    "named": false
-  },
-  {
-    "type": "get_work_dim",
-    "named": false
-  },
-  {
     "type": "goto",
     "named": false
   },
@@ -4805,11 +4690,11 @@
     "named": false
   },
   {
-    "type": "long",
+    "type": "kernel_qualifier",
     "named": false
   },
   {
-    "type": "mem_fence",
+    "type": "long",
     "named": false
   },
   {
@@ -4865,14 +4750,6 @@
     "named": true
   },
   {
-    "type": "read_imagef",
-    "named": false
-  },
-  {
-    "type": "read_mem_fence",
-    "named": false
-  },
-  {
     "type": "register",
     "named": false
   },
@@ -4915,10 +4792,6 @@
   {
     "type": "static",
     "named": false
-  },
-  {
-    "type": "storage_qualifier",
-    "named": true
   },
   {
     "type": "string_content",
@@ -4985,15 +4858,7 @@
     "named": true
   },
   {
-    "type": "vload_half",
-    "named": false
-  },
-  {
     "type": "volatile",
-    "named": false
-  },
-  {
-    "type": "vstore_half",
     "named": false
   },
   {
@@ -5006,14 +4871,6 @@
   },
   {
     "type": "work_group_size_hint",
-    "named": false
-  },
-  {
-    "type": "write_imagef",
-    "named": false
-  },
-  {
-    "type": "write_mem_fence",
     "named": false
   },
   {

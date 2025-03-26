@@ -9,10 +9,11 @@
   "switch" "typedef" "union" "volatile" "while"
 ] @keyword
 
-; Our newly introduced node types for qualifiers:
-(opencl_kernel_qualifier) @keyword
-(opencl_address_space) @type.qualifier
-(opencl_access_qualifier) @type.qualifier
+; OpenCL qualifiers
+"kernel" @keyword
+"__kernel" @keyword
+(address_space_qualifier) @type.qualifier
+(access_qualifier) @type.qualifier
 
 ; Operators
 [

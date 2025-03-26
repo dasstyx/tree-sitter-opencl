@@ -72,22 +72,22 @@ module.exports = grammar(C, {
      *  read_only image2d_t img;
      *
      * We'll define distinct node types so we can highlight them:
-     *   - opencl_kernel_qualifier
-     *   - opencl_address_space
-     *   - opencl_access_qualifier
+     *   - kernel_qualifier
+     *   - address_space_qualifier
+     *   - access_qualifier
      *
      * Then the highlight query can refer to these node types safely.
      */
     declaration: ($, original) => choice(
       seq(
         repeat(choice(
-          alias(choice('__kernel', 'kernel'), $.opencl_kernel_qualifier),
+          alias(choice('__kernel', 'kernel'), 'kernel_qualifier'),
           alias(choice('__global', '__local', '__private', '__constant', '__generic',
                        'global', 'local', 'private', 'constant', 'generic'),
-                $.opencl_address_space),
+                'address_space_qualifier'),
           alias(choice('__read_only', '__write_only', '__read_write',
                        'read_only', 'write_only', 'read_write'),
-                $.opencl_access_qualifier)
+                'access_qualifier')
         )),
         original
       ),
