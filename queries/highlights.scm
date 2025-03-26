@@ -10,8 +10,7 @@
 ] @keyword
 
 ; OpenCL qualifiers
-"kernel" @keyword
-"__kernel" @keyword
+(kernel_qualifier) @keyword
 (address_space_qualifier) @type.qualifier
 (access_qualifier) @type.qualifier
 

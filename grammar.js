@@ -81,13 +81,13 @@ module.exports = grammar(C, {
     declaration: ($, original) => choice(
       seq(
         repeat(choice(
-          alias(choice('__kernel', 'kernel'), 'kernel_qualifier'),
+          alias(choice('__kernel', 'kernel'), $.kernel_qualifier),
           alias(choice('__global', '__local', '__private', '__constant', '__generic',
                        'global', 'local', 'private', 'constant', 'generic'),
-                'address_space_qualifier'),
+                $.address_space_qualifier),
           alias(choice('__read_only', '__write_only', '__read_write',
                        'read_only', 'write_only', 'read_write'),
-                'access_qualifier')
+                $.access_qualifier)
         )),
         original
       ),
