@@ -1,6 +1,9 @@
 /**
  * @file OpenCL 3.0 Grammar for Tree-Sitter
- * Based on tree-sitter-c with OpenCL-specific extensions.
+ * Extends tree-sitter-c with OpenCL-specific keywords and qualifiers.
+ *
+ * This example ensures that for address space, access, and kernel qualifiers,
+ * we define node names that can be used in the highlights query.
  */
 
 const C = require('tree-sitter-c/grammar');
@@ -8,26 +11,26 @@ const C = require('tree-sitter-c/grammar');
 // Extend C precedence levels
 const PREC = Object.assign({}, C.PREC, {
   VECTOR: C.PREC.CALL + 1,
-  OPENCL_ATTR: C.PREC.CALL + 2
+  OPENCL_ATTR: C.PREC.CALL + 2,
 });
 
 module.exports = grammar(C, {
   name: 'opencl',
 
+  // We can define new rules or override existing rules here.
   conflicts: ($, original) => original.concat([
-    [$.function_definition, $.declaration],
-    [$.declaration]
+    // If needed, add or remove conflicts for complex OpenCL patterns.
   ]),
 
   rules: {
-    // --- Top-Level Items ---
+    // Let’s keep C’s top-level items but also allow kernel functions & OpenCL pragmas
     _top_level_item: ($, original) => choice(
       ...original.members,
       $.kernel_function_definition,
       $.opencl_pragma_directive
     ),
 
-    // --- OpenCL Pragma Directives ---
+    // #pragma OPENCL EXTENSION ...
     opencl_pragma_directive: $ => seq(
       '#pragma',
       'OPENCL',
@@ -37,7 +40,13 @@ module.exports = grammar(C, {
       )
     ),
 
-    // --- Kernel Function Definition ---
+    /**
+     * kernel_function_definition
+     *
+     * e.g.:
+     *  __kernel void foo(...) { ... }
+     *  kernel void foo(...) { ... }
+     */
     kernel_function_definition: $ => prec(2, seq(
       choice('__kernel', 'kernel'),
       repeat($.function_attribute),
@@ -46,7 +55,6 @@ module.exports = grammar(C, {
       field('body', $.compound_statement)
     )),
 
-    // --- Function Attributes (for kernel hints) ---
     function_attribute: _ => choice(
       'vec_type_hint',
       'work_group_size_hint',
@@ -54,37 +62,39 @@ module.exports = grammar(C, {
       'intel_reqd_sub_group_size'
     ),
 
-    // --- Storage and Qualifiers ---
-    declaration: ($, original) => 
-      choice(
-        seq(
-          repeat(choice(
-            // Storage class and access qualifiers as tokens
-            alias('__kernel', $.storage_qualifier),
-            alias('kernel', $.storage_qualifier),
-            alias('__global', $.storage_qualifier),
-            alias('global', $.storage_qualifier),
-            alias('__local', $.storage_qualifier),
-            alias('local', $.storage_qualifier),
-            alias('__private', $.storage_qualifier),
-            alias('private', $.storage_qualifier),
-            alias('__constant', $.storage_qualifier),
-            alias('constant', $.storage_qualifier),
-            alias('__generic', $.storage_qualifier),
-            alias('generic', $.storage_qualifier),
-            alias('__read_only', $.access_qualifier),
-            alias('read_only', $.access_qualifier),
-            alias('__write_only', $.access_qualifier),
-            alias('write_only', $.access_qualifier),
-            alias('__read_write', $.access_qualifier),
-            alias('read_write', $.access_qualifier)
-          )),
-          original
-        ),
+    /**
+     * Override the default declaration rule so we can parse
+     * OpenCL qualifiers in front of typical declarations:
+     *
+     * e.g.:
+     *  __global int *ptr;
+     *  constant float bar = ...;
+     *  read_only image2d_t img;
+     *
+     * We'll define distinct node types so we can highlight them:
+     *   - opencl_kernel_qualifier
+     *   - opencl_address_space
+     *   - opencl_access_qualifier
+     *
+     * Then the highlight query can refer to these node types safely.
+     */
+    declaration: ($, original) => choice(
+      seq(
+        repeat(choice(
+          alias(choice('__kernel', 'kernel'), $.opencl_kernel_qualifier),
+          alias(choice('__global', '__local', '__private', '__constant', '__generic',
+                       'global', 'local', 'private', 'constant', 'generic'),
+                $.opencl_address_space),
+          alias(choice('__read_only', '__write_only', '__read_write',
+                       'read_only', 'write_only', 'read_write'),
+                $.opencl_access_qualifier)
+        )),
         original
       ),
+      original
+    ),
 
-    // --- Extend Type Specifiers with OpenCL Types ---
+    // Extend type specifiers with OpenCL types
     type_specifier: ($, original) => choice(
       ...original.members,
       $.vector_type,
@@ -95,7 +105,7 @@ module.exports = grammar(C, {
       'pipe'
     ),
 
-    // --- Improved Vector Type (fixed regex) ---
+    // Vector type pattern matching
     vector_type: _ => token(choice(
       /[u]?char(2|3|4|8|16)/,
       /[u]?short(2|3|4|8|16)/,
@@ -106,64 +116,33 @@ module.exports = grammar(C, {
       /half(2|3|4|8|16)/
     )),
 
-    // --- Expression Extensions ---
-    expression: ($, original) => choice(
-      ...original.members,
-      $.builtin_function_call,
-      // Vector access is handled through field_expression
-    ),
-
-    // Override field_expression to handle both struct fields and vector components
+    // For vector component swizzling, override field_expression
     field_expression: ($, original) => choice(
-      // Original C field access
       original,
-      // Vector component access (must come after original to avoid conflicts)
       prec.right(PREC.FIELD + 1, seq(
         field('argument', $.expression),
         field('operator', '.'),
-        field('component', token(choice(
-          /[xyzw]{1,4}/,
-          /[rgba]{1,4}/
-        )))
+        field('component', token(choice(/[xyzw]{1,4}/, /[rgba]{1,4}/)))
       ))
     ),
 
-    // --- Built-in Function Calls ---
+    // Built-in function calls
     builtin_function_call: $ => seq(
       field('function', $.builtin_function),
       field('arguments', $.argument_list)
     ),
 
+    // List of recognized builtin_function for highlighting
     builtin_function: _ => choice(
-      // Work-group functions
-      'get_work_dim', 'get_global_size', 'get_global_id',
-      'get_local_size', 'get_local_id', 'get_num_groups', 'get_group_id',
-      // Atomic functions
-      'atomic_add', 'atomic_sub', 'atomic_inc', 'atomic_dec',
-      'atomic_min', 'atomic_max', 'atomic_and', 'atomic_or', 'atomic_xor',
-      // Synchronization functions
-      'barrier', 'mem_fence', 'read_mem_fence', 'write_mem_fence',
-      // Image functions
-      'read_imagef', 'write_imagef', 'get_image_width', 'get_image_height',
-      // Vector load functions
+      // Example subset of possible functions
+      'get_work_dim', 'get_global_id', 'get_local_id',
+      'barrier', 'mem_fence',
       /vload[2348][1]?[6]?/,
-      'vload_half',
-      /vload_half[2348][1]?[6]?/,
-      /vloada_half[2348][1]?[6]?/,
-      
-      // Vector store functions
-      /vstore[2348][1]?[6]?/,
-      'vstore_half',
-      /vstore_half[2348][1]?[6]?/,
-      /vstorea_half[2348][1]?[6]?/,
-      
-      // Vector store with rounding modes
-      /vstore_half_(rte|rtz|rtp|rtn)/,
-      /vstore_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)/,
-      /vstorea_half[2348][1]?[6]?_(rte|rtz|rtp|rtn)/
+      /vstore[2348][1]?[6]?/
+      // (extend as needed)
     ),
 
-    // --- OpenCL Attributes ---
+    // Example: an OpenCL attribute extension, e.g. __attribute__((aligned(16)))
     opencl_attribute: $ => prec(PREC.OPENCL_ATTR, seq(
       '__attribute__',
       '(',
@@ -179,7 +158,11 @@ module.exports = grammar(C, {
       ')'
     )),
 
-    // Extend C's declaration specifiers with OpenCL attributes and resolve associativity
+    /**
+     * Extend or override how C's declaration specifiers are parsed,
+     * to allow opencl_attribute. This ensures things like:
+     *   __attribute__((aligned(16))) int foo;
+     */
     _declaration_specifiers: ($, original) => prec.right(1, seq(
       repeat(choice(
         $._declaration_modifiers,
@@ -190,7 +173,6 @@ module.exports = grammar(C, {
         $._declaration_modifiers,
         $.opencl_attribute
       ))
-    ))
-  }
+    )),
+  },
 });
-
